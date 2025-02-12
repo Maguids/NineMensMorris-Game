@@ -1,0 +1,180 @@
+O objetivo da segunda entrega é tornar o jogo distribuído, permitindo a participação de jogadores em diferentes computadores. 
+Para isso será usado um servidor que fornecerá um serviço web em
+
+http://twserver.alunos.dcc.fc.up.pt:8008/
+
+- Pedidos a realizar ao servidor
+- Respostas respostas dadas pelo servidor
+- Exemplos de sequências de pedidos/ respostas
+- Valorizações ao trabalho
+
+
+INFORMAÇÕES RELEVANTES:
+-> nick: String para identificar o jogador, usado no registo e em todas as funções que requerem autenticação.
+-> password: String usada em conjunção com o nick quando for necessário autenticar o jogador.
+-> size: Inteiro positivo representando o número de quadrados do tabuleiro
+-> game: String identificando o jogo gerado pelo função join. É um hash construído a partir de características do jogo.
+-> cell: Objeto indicado uma casa do tabuleiro como parte do movimento do jogador, com as propriedades: square (inteiro não negativo menor que o número de quadrados do tabuleiro) e position (inteiro não negativo menor que 8). A cell depende de phase.
+-> phase: pode ter o valor "drop", que indica que se está a colocar uma peça ou o valor "move" que indica que se vai mover uma peça.
+-> step: é um auxiliar de phase quando tem valor "move". step pode admitir os valores "from", quando escolhemos uma peça para mover, "to", quando definimos para onde a peça escolhida vai ser movida e "capture", quando escolhemos uma peça para capturar. Quando phase == "move" && step == "to", a casa pode ser a mesma indicada no passo anterior ("from"). Neste caso é anulada a seleção da peça, voltado a estar no passo from, e podendo assim selecionar outra peça.
+-> group: Tem sempre valor 12
+
+
+PEDIDOS:
+-> register:
+	Regista um jogador e associa-lhe uma password. Se o jogador já está registado com uma password diferente então a função retorna um erro. Caso contrário sucede.
+	A função register necessita de 2 argumentos:
+		- nick - o identificador do jogador
+		- password - que este escolheu
+	Esta função deve ser usada não só como registo inicial do utilizador mas também como forma de verificação no início de sessão.
+	São retornados erros se:
+		- os argumentos forem omitidos ou não forem strings
+		- o nick já estiver registado com um password diferente
+
+-> join:
+	Esta função emparelha 2 jogadores que pretendem jogar um jogo com um determinado tamanho de tabuleiro. Se o existe um jogador a aguardar por um jogo com as mesmas características então é emparelhado de imediato. Caso contrário, o jogador fica registado para um posterior emparelhamento. Em qualquer dos casos a função retorna de imediato. A notificação do emparelhamento é enviada pelo update. A função join necessita de 4 argumentos:
+		- group - id do grupo (debugging)
+		- nick - o identificador do jogador
+		- password - que este escolheu
+		- size - dimensão do tabuleiro
+	São retornados erros se:
+		- algum argumento for omitido
+		- os argumentos contiverem valores inválidos
+		- a autenticação não corresponder a um jogador registado
+
+-> leave:
+	Função invocada para abandonar o jogo. Se for invocada durante o emparelhamento, enquanto espera por outros jogador, então não tem consequências. Se o jogo já tiver em curso, a saída com este método concede a vitória ao adversário.
+	De notar também que os jogos têm um timeout de 2 minutos. Se uma jogada não for realizada no tempo devido então é executado um leave automático, nas condições descritas no parágrafo anterior.
+	Os argumentos desta função são:
+		- nick - identificação do jogador
+		- password - que este escolheu
+		- game - identificador do jogo
+	São retornados erros se:
+		- algum argumento for omitido
+		- a autenticação não corresponder a um jogador registado
+		- o identificador de jogo for inválido.
+
+-> notify:
+	Esta função notifica o servidor de uma jogada. O pedido é retornado de imediato. Os argumentos desta função são:
+		- nick - o identificador do jogador
+		- password - que este escolheu
+		- game - o identificador do jogo
+		- move - uma casa do do tabuleiro que participa no movimento
+	São reportados erros se:
+		- algum argumento for omitido
+		- os argumentos contiverem valores inválidos
+		- a autenticação não corresponder a um jogador registado
+		- tentar jogar fora da vez
+		- a jogada violar as regras do jogo
+
+-> update:
+	Este é a único função que usa o método GET, o único método suportado pelos Server Sent Events. Os argumentos desta função são codificados em urlencoded e são:
+		- game - identificador do jogo
+		- nick - identificador do jogador
+	No final de cada jogo o objecto EventSource deve ser fechado
+	Será gerado um erro no pedido GET se a referência ao jogo for inválida.
+
+-> ranking:
+	Retorna uma tabela de classificação com um máximo de 10 jogadores, ordenados por ordem decrescente do número de vitórias. São mantidas tabelas classificativas distintas para cada grupo. Os argumentos são:
+		- group - número do grupo
+		- size - tamanho do tabuleiro
+	São retornados erros se:
+		- algum argumento for omitido
+		- os argumentos contiverem valores inválidos
+
+
+
+RESPOSTAS:
+-> error: 
+	Mensagem de erro produzida sempre que a resposta HTTP for diferente de 200.
+	Todas as funções podem produzir erros em diferentes situações.
+
+-> game:
+	Identificador do jogo (hash) que é gerado quando um jogador pede para ser emparelhado (join).
+	Este identificador deve ser usado como argumento nas funções relacionadas com o jogo, como leave, notify e update.
+
+-> cell: 
+	Objeto indicado a casa do tabuleiro movimentada pelo jogador que anteriormente teve a vez (turn), com as propriedades:
+		- square - inteiro não negativo menor que o número de quadrados do tabuleiro
+		- position - inteiro não negativo menor que 8
+
+-> board:
+	Um array de arrays representando a situação de cada casa do tabuleiro. O array externo contem um conjunto de linhas, sendo a linha inicial a que está no topo do tabuleiro, e a final a que está no fundo. Cada linha é um array de strings com a situação de cada casa. A primeira corresponde à casa no topo superior esquerdo, sendo as seguintes na direção dos ponteiros do relógio, e a última a casa mais à direita. Cada casa pode estar numa de 3 situações:
+		- empty - vazia, não tem qualquer peça
+		- blue - contem uma peça azul
+		- red - contem uma peça vermelha
+	Exemplo: [
+ 			 ['blue', 'empty', 'blue', 'blue', 'blue', 'red', 'red', 'red'],
+ 			 ['red', 'blue', 'red', 'empty', 'red', 'blue', 'blue', 'empty'],
+ 			 ['red', 'red', 'empty', 'blue', 'empty', 'blue', 'empty', 'red'],
+		]
+
+-> phase:
+	Uma string representando a fase atual do jogo, podendo ter como valor:
+		- drop - pôr as peças no tabuleiro
+		- move - mover (e remover) as peças
+	A fase aplica-se ao jogador com a vez (turn). Se a fase for move, é ação do jogador depende também de step.
+
+-> step:
+	Uma string representando o passo seguinte durante a fase de mover as peças. Pode ter um 3 valores:
+		- from - escolher a casa com a peça a mover
+		- to - escolher a casa para onde a peça é movida
+		- take - escolher a peça do adversário a capturar
+	Estas escolhas aplica-se ao jogador com a vez (turn).
+
+-> players:
+	Objeto contendo 2 propriedades, uma por cada jogador. O nome de cada propriedade é o nick de um jogador. O valor da propriedade é a cor das peças desse jogador, blue ou red.
+
+-> turn:
+	O identificador do jogador (nick) com a vez de jogar. De imediato, apenas jogadas deste jogador serão aceites para este jogo.
+
+-> winner:
+	Identificador do jogador (nick) que venceu este jogo.
+	Poderá ser null se o jogo tiver terminado sem um vencedor. Isto poderá acontecer também se o jogador sair enquanto estiver à espera de um adversário.
+	Após iniciado o jogo, se um jogador o abandonar então concede a vitória ao adversário.
+
+-> ranking:
+	Lista contendo a tabela classificativa para o grupo e tamanho de tabuleiro dados. Cada elemento da lista é um objeto com as propriedades:
+		- nick - do jogador
+		- games - número de jogos
+		- victories - número de vitórias
+	A lista retornada está ordenada por ordem decrescente do número de vitórias e tem no máximo 10 registos.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

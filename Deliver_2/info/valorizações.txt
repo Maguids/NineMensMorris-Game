@@ -1,0 +1,7 @@
+O trabalho pode ser valorizado com a utilização de APIs do HTML 5 estudadas, nomeadamente:
+
+	- Usar WebStorage para guardar localmente as classificações do jogo contra o computador (sem usar o servidor) feitos na primeira entrega. Os resultados devem persistir, mesmo que o navegador seja reiniciado.
+
+	- Usar Canvas para melhorar a apresentação do jogo, por exemplo, criando animações para as jogadas ou para os tempos de espera.
+
+A implementação das valorizações é condição necessária para obter a totalidade da classificação.
