@@ -1,0 +1,14 @@
+{
+  "2": [
+    {
+      "nick": "player1",
+      "games": 12,
+      "victories": 6
+    },
+    {
+      "nick": "teste1",
+      "games": 12,
+      "victories": 6
+    }
+  ]
+}

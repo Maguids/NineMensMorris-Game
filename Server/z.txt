@@ -1,0 +1,69 @@
+RANKING:
+-> Pedido(200):
+curl -X POST http://localhost:8112/ranking -H "Content-Type: application/json" -d '{"group": 12, "size": 2}'
+curl -X POST "http://localhost:8112/ranking?group=12&size=2"
+-> Grupo que não existe (400):
+curl -X GET "http://localhost:8112/api/ranking?group=1&size=3"
+-> Argumentos em falta (400):
+curl -X GET "http://localhost:8112/api/ranking?group=1&size="
+
+
+REGISTER:
+-> Pedido (200):
+curl -X POST http://localhost:8112/register -H "Content-Type: application/json" -d '{"nick": "player1", "password": "mypassword"}'
+curl -X POST http://localhost:8112/register -H "Content-Type: application/json" -d '{"nick": "player2", "password": "mypassword"}'
+curl -X POST http://localhost:8112/api/register -H "Content-Type: application/json" -d '{"nick": "player3", "password": "mypassword"}'
+curl -X POST http://localhost:8112/api/register -H "Content-Type: application/json" -d '{"nick": "player4", "password": "mypassword"}'
+-> Argumentos ausentes (400):
+curl -X POST http://localhost:8112/api/register -H "Content-Type: application/json" -d '{}'
+-> Password incorreta (401):
+curl -X POST http://localhost:8112/api/register -H "Content-Type: application/json" -d '{"nick": "player1", "password": "wrongpassword"}'
+
+
+JOIN:
+->  Pedido (200):
+curl -X POST http://localhost:8112/join -H "Content-Type: application/json" -d '{"group": 12, "nick": "player1", "password": "mypassword", "size": 2}'
+curl -X POST http://localhost:8112/join -H "Content-Type: application/json" -d '{"group": 12, "nick": "player2", "password": "mypassword", "size": 3}'
+curl -X POST http://localhost:8112/api/join -H "Content-Type: application/json" -d '{"group": 12, "nick": "player4", "password": "mypassword", "size": 3}'
+-> Testar se jogadores com o mesmo size se juntam e com diferentes não
+    -> Juntam:
+    curl -X POST http://localhost:8112/api/join -H "Content-Type: application/json" -d '{"group": "12", "nick": "player1", "password": "mypassword", "size": 3}'
+    curl -X POST http://localhost:8112/api/join -H "Content-Type: application/json" -d '{"group": "12", "nick": "player2", "password": "mypassword", "size": 3}'
+    -> Não Juntam:
+    curl -X POST http://localhost:8112/api/join -H "Content-Type: application/json" -d '{"group": "12", "nick": "player1", "password": "mypassword", "size": 3}'
+    curl -X POST http://localhost:8112/api/join -H "Content-Type: application/json" -d '{"group": "12", "nick": "player2", "password": "mypassword", "size": 2}'
+-> Testar se um jogador offline não consegue dar join
+-> Testar se uma password errada da erro:
+curl -X POST http://localhost:8112/api/join -H "Content-Type: application/json" -d '{"group": "12", "nick": "player2", "password": "1", "size": 3}'
+-> Argumentos em Falta:
+curl -X POST http://localhost:8112/api/join -H "Content-Type: application/json" -d '{"group": "12", "nick": "player1", "size": 3}'
+-> Jogador já está waitting
+
+
+LEAVE:
+-> Pedido:
+curl -X POST http://localhost:8112/leave -H "Content-Type: application/json" -d '{"nick": "player1", "password": "mypassword", "game": "73b6af2d392c61b67512f6958ab5ad5c"}'
+curl -X POST http://localhost:8112/api/leave -H "Content-Type: application/json" -d '{"nick": "player2", "password": "mypassword", "game": "9a928f1ec777880b0f4cf3270f8cda01"}'
+curl -X POST http://localhost:8112/api/leave -H "Content-Type: application/json" -d '{"nick": "player4", "password": "mypassword", "game": "be1429044c434f66c204c1e47f1d6a60"}'
+-> Jogo Inválido (dar o gameID errado):
+curl -X POST http://localhost:8112/api/leave -H "Content-Type: application/json" -d '{"nick": "player3", "password": "mypassword", "game": "3d3a7c3d28a0321d439cf91263ed94f8"}'
+-> Autentificação falhada (Dar um jogador que não existe):
+curl -X POST http://localhost:8112/api/leave -H "Content-Type: application/json" -d '{"nick": "player5", "password": "mypassword", "game": "3d3a7c3d28a0321d439cf91263ed94f8"}'
+
+
+NOTIFY:
+curl -X POST http://localhost:8112/notify -H "Content-Type: application/json" -d '{"nick": "player1","password": "mypassword","game": "9cf136ea87fb0c9096da6d3acccb2212","cell": { "square": 1, "position": 2 }}'
+
+curl -X POST http://localhost:8112/notify -H "Content-Type: application/json" -d '{"nick": "teste1","password": "password","game": "9cf136ea87fb0c9096da6d3acccb2212","cell": { "square": 1, "position": 2 }}'
+
+
+UPDATE:
+curl -X GET "http://localhost:8112/update?nick=player1&game=9cf136ea87fb0c9096da6d3acccb2212"
+
+
+
+
+
+
+ssh -J up202207036@ssh.alunos.dcc.fc.up.pt up202207036@twserver-be
+ssh -J up999999999@ssh.alunos.dcc.fc.up.pt up999999999@twserver-be
